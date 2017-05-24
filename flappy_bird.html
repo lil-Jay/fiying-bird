@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<script src="js/util.js"></script>
+	<script src="js/sky.js"></script>
+	<script src="js/pipe.js"></script>
+	<script src="js/timer.js"></script>
+	<script src="js/land.js"></script>
+	<script src="js/bird.js"></script>
+</head>
+
+<body>
+	<script>
+		// 1、动态创建canvas标记与上下文对象
+		var cvs = document.createElement('canvas');
+		var ctx = cvs.getContext('2d');
+		document.body.appendChild(cvs);
+
+		// 2、加载图片资源，加载完毕后，调用游戏主函数
+		util.loadImgs({
+			bird: 'img/bird.png',
+			land: 'img/land.png',
+			sky: 'img/sky.png',
+			pipeUp: 'img/pipeUp.png',
+			pipeDown: 'img/pipeDown.png'
+		}, main);
+
+		// 3、游戏主函数
+		function main(imgObjs) {
+
+			// 根据游戏背景设置画布宽高
+			cvs.width = imgObjs.sky.width;
+			cvs.height = imgObjs.sky.height;
+
+			// 这里面的大部分逻辑是
+			// 创建游戏中所有的对象
+			// 然后依次调用他们的绘制方法与数据更新方法
+			// 清除画布，不断绘制新的，构成游戏帧动画
+
+			// 用来存放游戏中所有的角色
+			var roles = [];
+
+			// 背景
+			var skyTotal = getRoleNumber(imgObjs.sky.width);
+			for (var i = 0; i < skyTotal; i++) {
+				roles.push(new Sky({
+					ctx: ctx,
+					img: imgObjs.sky,
+					x: imgObjs.sky.width * i,
+					y: 0
+				}));
+			}
+
+			// 管道
+			var pipeTotal = getRoleNumber(imgObjs.pipeDown.width + 100);
+			for (var i = 0; i < pipeTotal; i++) {
+				roles.push(new Pipe({
+					ctx: ctx,
+					imgPipeDown: imgObjs.pipeDown,
+					imgPipeUp: imgObjs.pipeUp,
+					x: 300 + (imgObjs.pipeDown.width + 100) * i
+				}));
+			}
+			// 大地
+			var landTotal = getRoleNumber(imgObjs.land.width);
+			for (var i = 0; i < landTotal; i++) {
+				roles.push(new Land({
+					ctx: ctx,
+					img: imgObjs.land,
+					x: imgObjs.land.width * i,
+					y: cvs.height - imgObjs.land.height
+				}));
+			}
+
+			// 计时器
+			roles.push(new T({
+				ctx: ctx,
+			}));
+
+			// 鸟
+			roles.push(new Bird({
+				ctx: ctx,
+				img: imgObjs.bird,
+				w: imgObjs.bird.width / 3,
+				h: imgObjs.bird.height
+			}));
+
+			// 游戏帧动画(绘制游戏画面)
+			setInterval(function () {
+				if (!isDead(roles)) {
+					ctx.clearRect(0, 0, cvs.width, cvs.height);
+					ctx.beginPath();
+					roles.forEach(function (role, i) {
+						role.draw();
+						role.update();
+					});
+				}
+			}, 1000 / 30);
+		}
+		// 判断小鸟有没有死亡
+		function isDead(roles) {
+			var bird = roles[roles.length - 1];
+			// console.log(bird);
+			if (ctx.isPointInPath(bird.x + bird.w / 2, bird.y + bird.h / 2)) {
+				return true;
+			}
+			return false;
+		}
+
+		// 计算轮播角色所需的数量
+		function getRoleNumber(roleWidth) {
+			return Math.ceil(cvs.width / roleWidth) + 1;
+		}
+	</script>
+</body>
+
+</html>
